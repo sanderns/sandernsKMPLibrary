@@ -1,0 +1,58 @@
+name: Release SharedLogic
+
+on:
+  push:
+    tags: ['*.*.*']
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build XCFramework
+        run: ./gradlew :sharedLogic:assembleSharedLogicXCFramework
+
+      - name: Zip XCFramework
+        run: |
+          cd sharedLogic/build/XCFrameworks/release
+          zip -r SharedLogic.xcframework.zip SharedLogic.xcframework
+
+      - name: Compute checksum
+        id: checksum
+        run: |
+          CHECKSUM=$(swift package compute-checksum sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip)
+          echo "value=$CHECKSUM" >> "$GITHUB_OUTPUT"
+
+      - name: Update Package.swift
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          sed -i '' "s#download/[^/]*/SharedLogic.xcframework.zip#download/${VERSION}/SharedLogic.xcframework.zip#" Package.swift
+          sed -i '' "s#checksum: \".*\"#checksum: \"${{ steps.checksum.outputs.value }}\"#" Package.swift
+
+      - name: Commit updated manifest
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add Package.swift
+          git commit -m "Update Package.swift for ${GITHUB_REF_NAME}"
+          # move the tag to include this commit, so SPM resolves this exact manifest at this exact tag
+          git tag -f "${GITHUB_REF_NAME}"
+          git push origin main
+          git push origin "${GITHUB_REF_NAME}" --force
+
+      - name: Create GitHub Release with asset
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
