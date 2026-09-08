@@ -45,7 +45,6 @@ jobs:
           git commit -m "Update Package.swift for ${GITHUB_REF_NAME}"
           # move the tag to include this commit, so SPM resolves this exact manifest at this exact tag
           git tag -f "${GITHUB_REF_NAME}"
-          git push origin main
           git push origin "${GITHUB_REF_NAME}" --force
 
       - name: Create GitHub Release with asset
