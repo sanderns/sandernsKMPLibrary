@@ -11,8 +11,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "SharedLogic",
-            url: "https://github.com/sanderns/sandernsKMPLibrary/releases/download/1.0.3/SharedLogic.xcframework.zip",
-            checksum: "257f0d55377751725341ba6d97889860604f920a9a2dbfe1ee2f98c9a403e9c7"
+            url: "https://github.com/sanderns/sandernsKMPLibrary/releases/download/1.0.4/SharedLogic.xcframework.zip",
+            checksum: "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
         )
     ]
 )
