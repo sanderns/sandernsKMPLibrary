@@ -7,16 +7,16 @@ plugins {
 }
 
 kotlin {
-    val moduleName = "SharedLogic"
-
-    val xcf = XCFramework(moduleName)
+    val xcframeworkName = "SharedLogic"
+    val xcf = XCFramework(xcframeworkName)
 
     listOf(
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = moduleName
+            baseName = xcframeworkName
+            binaryOption("bundleId", "org.example.${xcframeworkName}")
             isStatic = true
             xcf.add(this)
         }
