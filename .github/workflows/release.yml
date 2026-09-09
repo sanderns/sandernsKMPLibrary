@@ -34,13 +34,36 @@ jobs:
           CHECKSUM=$(swift package compute-checksum sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip)
           echo "value=$CHECKSUM" >> "$GITHUB_OUTPUT"
 
+      - name: Create release and upload asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
+          gh release upload "${GITHUB_REF_NAME}" \
+            sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip
+
+      - name: Resolve the API asset URL
+        id: asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ASSET_URL=$(gh release view "${GITHUB_REF_NAME}" --json assets \
+            --jq '.assets[] | select(.name == "SharedLogic.xcframework.zip") | .apiUrl // empty')
+          if [ -z "$ASSET_URL" ]; then
+            # fallback: build it directly from the REST API if gh's json doesn't expose apiUrl
+            ASSET_ID=$(gh api "repos/${{ github.repository }}/releases/tags/${GITHUB_REF_NAME}" --jq '.assets[] | select(.name=="SharedLogic.xcframework.zip") | .id')
+            ASSET_URL="https://api.github.com/repos/${{ github.repository }}/releases/assets/${ASSET_ID}"
+          fi
+          echo "url=$ASSET_URL" >> "$GITHUB_OUTPUT"
+
       - name: Update Package.swift
         run: |
-          VERSION="${GITHUB_REF_NAME}"
-          sed -i '' "s#download/[^/]*/SharedLogic.xcframework.zip#download/${VERSION}/SharedLogic.xcframework.zip#" Package.swift
+          sed -i '' "s#url: \".*\"#url: \"${{ steps.asset.outputs.url }}\"#" Package.swift
           sed -i '' "s#checksum: \".*\"#checksum: \"${{ steps.checksum.outputs.value }}\"#" Package.swift
 
-      - name: Commit updated manifest
+      - name: Commit and force-move tag
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -48,18 +71,3 @@ jobs:
           git commit -m "Update Package.swift for ${GITHUB_REF_NAME}"
           git tag -f "${GITHUB_REF_NAME}"
           git push origin "${GITHUB_REF_NAME}" --force
-
-      - name: Create or update GitHub Release with asset
-        run: |
-          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" \
-              sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip \
-              --clobber
-          else
-            gh release create "${GITHUB_REF_NAME}" \
-              sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip \
-              --title "${GITHUB_REF_NAME}" \
-              --generate-notes
-          fi
-        env:
-          GH_TOKEN: ${{ github.token }}

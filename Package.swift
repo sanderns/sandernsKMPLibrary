@@ -10,7 +10,7 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "SharedLogic",
-            url: "https://github.com/sanderns/sandernsKMPLibrary/releases/download/PLACEHOLDER/SharedLogic.xcframework.zip",
+            url: "PLACEHOLDER",
             checksum: "PLACEHOLDER"
         )
     ]
