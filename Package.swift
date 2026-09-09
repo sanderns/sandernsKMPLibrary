@@ -1,5 +1,4 @@
 // swift-tools-version:6.2
-
 import PackageDescription
 
 let package = Package(
@@ -11,7 +10,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "SharedLogic",
-            path: "Frameworks/SharedLogic.xcframework"
+            url: "https://github.com/sanderns/sandernsKMPLibrary/releases/download/PLACEHOLDER/SharedLogic.xcframework.zip",
+            checksum: "PLACEHOLDER"
         )
     ]
 )
