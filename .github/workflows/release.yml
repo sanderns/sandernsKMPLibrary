@@ -20,39 +20,17 @@ jobs:
       - name: Build XCFramework
         run: ./gradlew :sharedLogic:assembleSharedLogicXCFramework
 
-      - name: Zip XCFramework
+      - name: Copy framework into repo
         run: |
-          cd sharedLogic/build/XCFrameworks/release
-          zip -r SharedLogic.xcframework.zip SharedLogic.xcframework
+          rm -rf Frameworks/SharedLogic.xcframework
+          mkdir -p Frameworks
+          cp -R sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework Frameworks/
 
-      - name: Compute checksum
-        id: checksum
-        run: |
-          CHECKSUM=$(swift package compute-checksum sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip)
-          echo "value=$CHECKSUM" >> "$GITHUB_OUTPUT"
-
-      - name: Update Package.swift
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          sed -i '' "s#download/[^/]*/SharedLogic.xcframework.zip#download/${VERSION}/SharedLogic.xcframework.zip#" Package.swift
-          sed -i '' "s#checksum: \".*\"#checksum: \"${{ steps.checksum.outputs.value }}\"#" Package.swift
-
-      - name: Commit updated manifest
+      - name: Commit framework and manifest
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add Package.swift
-          git commit -m "Update Package.swift for ${GITHUB_REF_NAME}"
-          # move the tag to include this commit, so SPM resolves this exact manifest at this exact tag
+          git add Frameworks/SharedLogic.xcframework Package.swift
+          git commit -m "Release ${GITHUB_REF_NAME}"
           git tag -f "${GITHUB_REF_NAME}"
-          git push origin main
           git push origin "${GITHUB_REF_NAME}" --force
-
-      - name: Create GitHub Release with asset
-        run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip \
-            --title "${GITHUB_REF_NAME}" \
-            --generate-notes
-        env:
-          GH_TOKEN: ${{ github.token }}
