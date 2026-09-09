@@ -4,7 +4,7 @@ on:
   push:
     tags: ['*.*.*']
 
-permissions: 
+permissions:
   contents: write
 
 jobs:
@@ -12,6 +12,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true          # ensures LFS objects are pulled during checkout
 
       - uses: actions/setup-java@v4
         with:
@@ -29,11 +31,21 @@ jobs:
           mkdir -p Frameworks
           cp -R sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework Frameworks/
 
-      - name: Commit framework and manifest
+      - name: Commit framework (via LFS) and manifest
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add Frameworks/SharedLogic.xcframework Package.swift
+          git lfs install
+          git add Frameworks/SharedLogic.xcframework Package.swift .gitattributes
           git commit -m "Release ${GITHUB_REF_NAME}"
           git tag -f "${GITHUB_REF_NAME}"
           git push origin "${GITHUB_REF_NAME}" --force
+
+      - name: Prune old tags beyond retention window
+        run: |
+          KEEP=10
+          git fetch --tags
+          git tag --sort=-v:refname | tail -n +$((KEEP+1)) | while read -r old_tag; do
+            echo "Deleting old tag: $old_tag"
+            git push origin ":refs/tags/$old_tag" || true
+          done
