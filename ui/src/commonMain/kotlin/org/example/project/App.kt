@@ -14,10 +14,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.sanderns.kmplib.ui.generated.resources.Res
+import com.sanderns.kmplib.ui.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
-
-import sandernskmplibrary.sharedui.generated.resources.Res
-import sandernskmplibrary.sharedui.generated.resources.compose_multiplatform
 
 @Composable
 @Preview
