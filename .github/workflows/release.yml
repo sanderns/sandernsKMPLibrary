@@ -1,14 +1,20 @@
-name: Release SharedLogic
+name: Publish KMPLib
 
 on:
   push:
     tags: ['*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
-  release:
+  publish:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,46 +26,21 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build XCFramework
-        run: ./gradlew :sharedLogic:assembleSharedLogicXCFramework
-
-      - name: Zip XCFramework
+      - name: Determine version
+        id: version
         run: |
-          cd sharedLogic/build/XCFrameworks/release
-          zip -r SharedLogic.xcframework.zip SharedLogic.xcframework
-
-      - name: Compute checksum
-        id: checksum
-        run: |
-          CHECKSUM=$(swift package compute-checksum sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip)
-          echo "value=$CHECKSUM" >> "$GITHUB_OUTPUT"
-
-      - name: Update Package.swift
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          sed -i '' "s#download/[^/]*/SharedLogic.xcframework.zip#download/${VERSION}/SharedLogic.xcframework.zip#" Package.swift
-          sed -i '' "s#checksum: \".*\"#checksum: \"${{ steps.checksum.outputs.value }}\"#" Package.swift
-
-      - name: Commit updated manifest
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add Package.swift
-          git commit -m "Update Package.swift for ${GITHUB_REF_NAME}"
-          git tag -f "${GITHUB_REF_NAME}"
-          git push origin "${GITHUB_REF_NAME}" --force
-
-      - name: Create or update GitHub Release with asset
-        run: |
-          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" \
-              sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip \
-              --clobber
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           else
-            gh release create "${GITHUB_REF_NAME}" \
-              sharedLogic/build/XCFrameworks/release/SharedLogic.xcframework.zip \
-              --title "${GITHUB_REF_NAME}" \
-              --generate-notes
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Publish core and ui
+        run: |
+          ./gradlew \
+            :core:publishAllPublicationsToGitHubPackagesRepository \
+            :ui:publishAllPublicationsToGitHubPackagesRepository \
+            -PlibVersion=${{ steps.version.outputs.value }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

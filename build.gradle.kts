@@ -7,3 +7,8 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
 }
+
+allprojects {
+    group = "com.sanderns.kmplib"
+    version = project.findProperty("uiVersion") as? String ?: "0.1.0-SNAPSHOT"
+}

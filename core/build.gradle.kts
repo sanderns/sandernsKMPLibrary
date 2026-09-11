@@ -1,29 +1,32 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
+    `maven-publish`
+}
+
+publishing {
+    publications.withType<MavenPublication> {
+        groupId = "com.sanderns.kmplib"
+        artifactId = "core-$name"
+    }
+
+    repositories {
+        maven {
+            name = "GithubPackages"
+            url = uri("https://maven.pkg.github.com/sanderns/sandernsKMPLibrary")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: findProperty("gpr.user") as String?
+                password = System.getenv("GITHUB_TOKEN") ?: findProperty("gpr.token") as String?
+            }
+        }
+    }
 }
 
 kotlin {
-    val xcframeworkName = "SharedLogic"
-    val xcf = XCFramework(xcframeworkName)
-
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = xcframeworkName
-            binaryOption("bundleId", "org.example.${xcframeworkName}")
-            isStatic = true
-            xcf.add(this)
-        }
-    }
-    
     android {
-       namespace = "org.example.project.sharedLogic"
+       namespace = "org.example.project.core"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
        minSdk = libs.versions.android.minSdk.get().toInt()
     
@@ -37,6 +40,9 @@ kotlin {
            isIncludeAndroidResources = true
        }
     }
+
+    iosArm64()
+    iosSimulatorArm64()
     
     sourceSets {
         commonMain.dependencies {
