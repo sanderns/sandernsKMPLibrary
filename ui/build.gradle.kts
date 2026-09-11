@@ -9,9 +9,8 @@ plugins {
 }
 
 publishing {
-    publications.withType<MavenPublication> {
-        groupId = "com.sandern.kmplib"
-        artifactId = "core-$name" // Gradle appends target name automatically for KMP multi-target publications; adjust if you want simpler naming
+    publications.withType<MavenPublication>().configureEach {
+        artifactId = artifactId.lowercase() // Gradle appends target name automatically for KMP multi-target publications; adjust if you want simpler naming
     }
     repositories {
         maven {

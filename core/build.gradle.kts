@@ -7,14 +7,13 @@ plugins {
 }
 
 publishing {
-    publications.withType<MavenPublication> {
-        groupId = "com.sanderns.kmplib"
-        artifactId = "core-$name"
+    publications.withType<MavenPublication>().configureEach {
+        artifactId = artifactId.lowercase() // Gradle appends target name automatically for KMP multi-target publications; adjust if you want simpler naming
     }
 
     repositories {
         maven {
-            name = "GithubPackages"
+            name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/sanderns/sandernsKMPLibrary")
             credentials {
                 username = System.getenv("GITHUB_ACTOR") ?: findProperty("gpr.user") as String?

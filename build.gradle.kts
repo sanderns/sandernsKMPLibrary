@@ -1,7 +1,6 @@
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
     // in each subproject's classloader
-    alias(libs.plugins.androidApplication) apply false
     alias(libs.plugins.androidMultiplatformLibrary) apply false
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.composeCompiler) apply false
@@ -10,5 +9,5 @@ plugins {
 
 allprojects {
     group = "com.sanderns.kmplib"
-    version = project.findProperty("uiVersion") as? String ?: "0.1.0-SNAPSHOT"
+    version = project.findProperty("libVersion") as? String ?: "0.1.0-SNAPSHOT"
 }
